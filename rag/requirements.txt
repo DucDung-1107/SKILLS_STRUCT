@@ -1,0 +1,52 @@
+# 🧠 SkillStruct RAG System Requirements
+# Advanced retrieval-augmented generation system với Milvus vector database
+
+# Core dependencies
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Vector database và embeddings
+pymilvus>=2.3.4
+pymilvus[model]>=2.3.4
+
+# Google AI embeddings
+langchain-google-genai>=1.0.0
+google-generativeai>=0.3.2
+
+# LangChain core
+langchain>=0.1.0
+langchain-core>=0.1.0
+langchain-community>=0.0.13
+
+# Text processing và NLP
+nltk>=3.8.1
+spacy>=3.7.2
+textblob>=0.17.1
+sentence-transformers>=2.2.2
+
+# Data processing
+numpy>=1.24.3
+pandas>=2.0.3
+scipy>=1.11.1
+
+# Async support
+asyncio-mqtt>=0.13.0
+aiofiles>=23.2.1
+asyncpg>=0.29.0
+
+# HTTP client
+httpx>=0.25.2
+aiohttp>=3.9.1
+
+# Monitoring và logging
+structlog>=23.2.0
+prometheus-client>=0.19.0
+
+# Development tools (optional)
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+black>=23.11.0
+isort>=5.12.0
+mypy>=1.7.1
