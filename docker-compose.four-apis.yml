@@ -1,0 +1,120 @@
+# Docker Compose for 4 Working SkillStruct APIs
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: skillstruct
+      POSTGRES_USER: skillstruct_user
+      POSTGRES_PASSWORD: skillstruct_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - api-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillstruct_user -d skillstruct"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # JSON API Service
+  json-api:
+    image: skillstruct-json-api:latest
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - DATABASE_URL=postgresql://skillstruct_user:skillstruct_pass@postgres:5432/skillstruct
+    networks:
+      - api-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Recommendation API Service  
+  recommend-api:
+    image: skillstruct-recommend-api:latest
+    ports:
+      - "8002:8000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - DATABASE_URL=postgresql://skillstruct_user:skillstruct_pass@postgres:5432/skillstruct
+    networks:
+      - api-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Graph API Service
+  graph-api:
+    image: skillstruct-graph-api:latest
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - DATABASE_URL=postgresql://skillstruct_user:skillstruct_pass@postgres:5432/skillstruct
+    networks:
+      - api-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+
+
+  # OCR + Clustering API Service
+  ocr-api:
+    image: skillstruct-ocr-api:latest
+    ports:
+      - "8004:8000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - DATABASE_URL=postgresql://skillstruct_user:skillstruct_pass@postgres:5432/skillstruct
+    networks:
+      - api-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  api-network:
+    driver: bridge

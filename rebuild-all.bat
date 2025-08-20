@@ -1,0 +1,19 @@
+@echo off
+echo Rebuilding all APIs with no-cache...
+
+echo Building JSON API...
+docker build --no-cache -f services/Dockerfile.json-api -t skillstruct-json-api:latest .
+
+echo Building Graph API...
+docker build --no-cache -f services/Dockerfile.graph-api -t skillstruct-graph-api:latest .
+
+echo Building Recommend API...
+docker build --no-cache -f services/Dockerfile.recommend-api -t skillstruct-recommend-api:latest .
+
+echo Building Auth Demo API...
+docker build --no-cache -f services/Dockerfile.auth-demo -t skillstruct-auth-demo:latest .
+
+echo Building OCR API...
+docker build --no-cache -f services/Dockerfile.ocr-api -t skillstruct-ocr-api:latest .
+
+echo All APIs rebuilt successfully!

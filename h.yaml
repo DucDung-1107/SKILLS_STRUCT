@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skillstruct-graph-api
+  labels:
+    app: skillstruct-graph-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: skillstruct-graph-api
+  template:
+    metadata:
+      labels:
+        app: skillstruct-graph-api
+    spec:
+      containers:
+      - name: skillstruct-graph-api
+        image: 661269962226.dkr.ecr.ap-southeast-1.amazonaws.com/dev-docker-repository:skillstruct-graph-api
+        ports:
+        - containerPort: 8000
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 20
