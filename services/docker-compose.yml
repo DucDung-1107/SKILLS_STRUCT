@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database (shared dependency)
+  postgres:
+    image: postgres:15-alpine
+    container_name: skillstruct-postgres
+    environment:
+      POSTGRES_DB: skillstruct_db
+      POSTGRES_USER: skillstruct_user
+      POSTGRES_PASSWORD: skillstruct_pass
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - api-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillstruct_user -d skillstruct_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # OCR + Clustering API Service
+  ocr-clustering-api:
+    build:
+      context: ..
+      dockerfile: services/Dockerfile.ocr-api
+    container_name: skillstruct-ocr-api
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-AIzaSyDL7j6v9YK0U0l_ooD-WaXxWaGMOdRQvnA}
+      - DATABASE_URL=postgresql://skillstruct_user:skillstruct_pass@postgres:5432/skillstruct_db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../data/resume:/app/data/resume:ro
+      - api_logs:/app/logs
+    networks:
+      - api-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # JSON Generation API Service  
+  json-generation-api:
+    build:
+      context: ..
+      dockerfile: services/Dockerfile.json-api
+    container_name: skillstruct-json-api
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-AIzaSyDL7j6v9YK0U0l_ooD-WaXxWaGMOdRQvnA}
+    ports:
+      - "8001:8001"
+    volumes:
+      - api_logs:/app/logs
+    networks:
+      - api-network
+    restart: unless-stopped
+
+  # Graph Management API Service
+  graph-management-api:
+    build:
+      context: ..
+      dockerfile: services/Dockerfile.graph-api
+    container_name: skillstruct-graph-api
+    environment:
+      - DATABASE_URL=postgresql://skillstruct_user:skillstruct_pass@postgres:5432/skillstruct_db
+    ports:
+      - "8002:8002"
+    volumes:
+      - ../data/skill_taxonomy_tree:/app/data/skill_taxonomy_tree
+      - api_logs:/app/logs
+    networks:
+      - api-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Recommendation API Service
+  recommendation-api:
+    build:
+      context: ..
+      dockerfile: services/Dockerfile.recommend-api
+    container_name: skillstruct-recommend-api
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-AIzaSyDL7j6v9YK0U0l_ooD-WaXxWaGMOdRQvnA}
+    ports:
+      - "8003:8003"
+    volumes:
+      - ../data/skill_taxonomy_tree:/app/data/skill_taxonomy_tree
+      - api_logs:/app/logs
+    networks:
+      - api-network
+    restart: unless-stopped
+
+  # Nginx Load Balancer for APIs
+  api-gateway:
+    image: nginx:alpine
+    container_name: skillstruct-api-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx-api.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - api-network
+    depends_on:
+      - ocr-clustering-api
+      - json-generation-api
+      - graph-management-api
+      - recommendation-api
+    restart: unless-stopped
+
+# Volumes
+volumes:
+  postgres_data:
+    driver: local
+  api_logs:
+    driver: local
+
+# Networks
+networks:
+  api-network:
+    driver: bridge

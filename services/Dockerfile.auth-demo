@@ -1,0 +1,44 @@
+# Docker co# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txtguration for Test Auth Demo API
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the specific API file
+COPY services/test_auth_demo.py ./services/
+
+# Copy supporting directories
+COPY data/ ./data/
+COPY utils/ ./utils/
+
+# Create necessary directories
+RUN mkdir -p data/skill_taxonomy_tree logs
+
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash --uid 1000 apiuser && \
+    chown -R apiuser:apiuser /app
+
+# Switch to non-root user
+USER apiuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Expose port
+EXPOSE 8000
+
+# Run the Auth Demo API
+CMD ["python", "-m", "uvicorn", "services.test_auth_demo:app", "--host", "0.0.0.0", "--port", "8000"]
